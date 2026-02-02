@@ -1,0 +1,637 @@
+import random
+import matplotlib.pyplot as plt
+
+tableau_foret = []
+hauteur = []
+renvoi = []
+
+h_annees = []
+h_hauteur_moyenne = []
+h_nb_arbres = []
+
+##################################################Choix de l'utilisateur##############################################################################
+
+def choix_simulation():
+
+    """Cette fonction a pour but de damander à l'utilisateur s'il veut lancer une simulation basique ou complexe."""
+
+    choix = str(input("Voulez-vous lancer une simulation basique ou complexe? (B/C): ")).upper()
+
+    return choix
+
+def choix_caractere():
+
+    """Cette fonction a pour but de demander à l'utilisateur quel caractère il veut utiliser pour représenter les arbres."""
+
+    caractere = str(input("Par quel caractère voulez-vous représenter vos arbres ?: "))
+
+    return caractere
+
+def choix_simulateur():
+
+    """Cette fonction a pour but de demander à l'utilisateur quel simulateur de continent il veut utiliser."""
+
+    simulateur_choisi = str(input("Quel simulateur voulez-vous utiliser ? (1:Afrique, 2:Asie, 3:Amérique du Nord, 4:Amérique du Sud, 5:Europe, 6: Océanie): "))
+
+    return simulateur_choisi
+
+def nombre_arbres():
+
+    """Cette fonction a pour but de demander à l'utilisateur le nombre d'arbres qu'il souhaite dans sa simulation."""
+
+    nb_arbres = 0
+    reponse = str(input("Souhaitez vous choisir le nombre d'arbres ? (OUI/NON): ")).upper()
+    if reponse == "OUI":
+        while nb_arbres < 1 or nb_arbres > 30 :
+            nb_arbres = int(input("Entrez le nombre d'arbres (entre 1 et 30): "))
+    else:
+        nb_arbres = random.randint(10, 30)
+    tableau_foret = [" "] * nb_arbres
+
+    return tableau_foret
+
+#####################################################Système du code##################################################################################
+
+def choix_proba(proba) :
+
+    """Cette fonction a pour but de permettre de donner une probabilité à un évènement.
+       Elle prend en compte la variable proba qui est un nombre entre 0 et 1."""
+
+    return random.random() <= proba
+
+def hauteur_arbre(tableau_foret):
+
+    """Cette fonction donne la hauteur de départ des arbres de la forêt."""
+
+    for i in range(len(tableau_foret)):
+        taille_arbre = random.randint(0, 7)
+        hauteur.append(taille_arbre)
+
+    return hauteur
+
+def densite_des_arbres(tableau_foret,hauteur,caractere):
+
+    """Cette fonction permet d'espacer les arbres selon la densité choisie par l'utilisateur.
+    Il y a quatre densités possibles : faible, moyenne, forte et maximale."""
+
+    options = {"1": 0.6, "2": 0.4, "3": 0.2, "4": 0.0} # Dictionnaire regroupant les différentes probabilités en fonction de la densité choisie
+    type_densite = input("Quel densité de forêt voulez-vous ? (1:Faible, 2:Moyenne, 3:Forte, 4:Maximale, 5:Aléatoire): ")
+
+    if type_densite in options:
+        proba_espacement = options[type_densite]
+    else:
+        proba_espacement = random.random()
+
+    nouvelle_foret = [] # Nouvelle liste pour la forêt avec les espaces ajoutés
+    nouvelles_hauteurs = [] # Nouvelle liste pour les hauteurs avec les espaces ajoutés
+    for h in range (len(hauteur)):
+        if hauteur[h] == 0 :
+            nouvelle_foret.append(".") # Symbole pour une graine
+            nouvelles_hauteurs.append(0)   
+        else:
+            nouvelle_foret.append(caractere) # Symbole pour un arbre
+            nouvelles_hauteurs.append(hauteur[h])
+        while choix_proba(proba_espacement): # Ajout d'espaces après chaque arbre selon la probabilité choisie
+            nouvelle_foret.append(" ")
+            nouvelles_hauteurs.append(-1) # -1 signifie "pas d'arbre ici", ce qui n'empêchera pas qu'une graine y soit plantée plus tard
+
+    tableau_foret = nouvelle_foret
+    hauteur = nouvelles_hauteurs
+
+    return tableau_foret,hauteur
+
+def annees_passees_B(tableau_foret, hauteur, caractere, renvoi):
+
+    """Cette fonction a pour but de savoir pour combien d'années il faut lancer la simulation basique.
+       Chaque année elle donne une chance de 70% à un arbre de grandir."""
+
+    nb_annees = int(input("Pour combien d'années voulez vous lancer la simulation?: "))
+    
+    for annee in range(nb_annees):
+        for i in range(len(hauteur)):
+            if choix_proba(0.7):
+                hauteur[i] += 1
+        
+        afficher_foret(tableau_foret, hauteur, caractere)
+        print(hauteur)
+        print(f"Année : {annee+1}")
+
+def annees_passees_C(tableau_foret, hauteur, caractere, renvoi, simulateur_choisi, age):
+
+    """Cette fonction a pour but de savoir pour combien d'années il faut lancer la simulation complexe.
+       Elle prend en compte les variables tableau_foret, hauteur, caractere, renvoi, simulateur_choisi et age pour déterminer le nombre d'années pour lesquelles il faut afficher la simulation.
+       Elle prend également en compte dle nombre d'abres encore en vie à chaque années de la simulation.
+       Elle prend également en compte la moyenne des hauteurs des arbres à chaque année de la simulation dans le but d'avoir les bonnes informations dans la fonction graphe"""
+
+    nb_annees = int(input("Pour combien d'années voulez-vous lancer la simulation?: "))
+    annee = 0
+    age = age_arbres(hauteur,annee,age)
+
+    for i in range(nb_annees):
+        proba_action(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi)
+        afficher_foret(tableau_foret,hauteur,caractere)
+        print(hauteur)
+        for reponse in renvoi:
+            print(reponse) # Affiche tous les évènements qui se sont produits durant l'année
+        renvoi.clear()
+        annee += 1
+        print("Année :", annee) # Affiche le nombre d'années après la plantation
+        age = age_arbres(hauteur,annee,age)
+
+        nb_arbres_vivants = tableau_foret.count(caractere)
+        print(nb_arbres_vivants,"arbres")
+        somme_hauteurs = 0
+        for i in range(len(tableau_foret)):
+            if tableau_foret[i] == caractere:
+                somme_hauteurs += hauteur[i]
+
+        moyenne = somme_hauteurs / nb_arbres_vivants if nb_arbres_vivants > 0 else 0
+        
+        h_annees.append(annee)
+        h_nb_arbres.append(nb_arbres_vivants)
+        h_hauteur_moyenne.append(moyenne)
+
+    graphe(hauteur,h_annees,h_nb_arbres,h_hauteur_moyenne)
+
+def age_arbres(hauteur,annee,age):
+
+    """Cette fonction a pour but de connaitre l'age des arbres.
+       Elle influe donc dans certains évènement où elle donne plus de chance de mourir aux vieux arbres"""
+    
+    if annee == 0:
+        for i in range(len(hauteur)):
+            if hauteur[i] > 0 :
+                age.append(hauteur[i])
+            else :
+                age.append(0)
+    else :
+        for i in range(len(hauteur)):
+            if hauteur[i] > 0:
+                age[i] += 1
+
+    return age
+
+def croissance_arbres(tableau_foret,hauteur,liste_probas):
+
+    """Cette fonction a pour but de savoir si un arbre peut grandir.
+       Elle détermine si elle doit faire grandir les arbres en fonction de leur hauteur."""
+
+    for i in range(len(hauteur)):
+        if hauteur[i] == -1:
+            continue
+        elif hauteur[i] > 25:
+            continue
+        elif tableau_foret[i] == ".":
+            continue
+        elif choix_proba(liste_probas[i]):
+             hauteur[i] += 1
+        else :
+            continue
+
+    return tableau_foret,hauteur
+
+########################################################Graphisme#################################################################################
+
+def afficher_foret(tableau_foret,hauteur,caractere):
+
+    """Cette fonction a pour but d'afficher le tableau de la simulation dans le terminal en 2D.
+       Elle prend en compte les variables tableau_foret, hauteur et caractere.
+       Elle peut donc afficher les arbres et les graines dans le terminal.
+       Elle affiche les arbres en regardant la hauteur de chaque arbre. Et en affichant ensuite les caractères représentant les arbres de haut en bas."""
+
+    hauteur_max = max(hauteur)
+    for h in range(int(hauteur_max), 0, -1):
+        ligne = ""
+        for i in range(len(tableau_foret)):
+            if tableau_foret[i] == caractere and hauteur[i] >= h:
+                ligne += caractere+" "
+            elif tableau_foret[i] == "." and h == 1 :
+                ligne += ". "
+            else:
+                ligne += "  "
+        print(ligne)
+
+def graphe(hauteur,h_annees,h_nb_arbres,h_hauteur_moyenne):
+
+    """Cette fonction a pour but de tracer le graphe de la simulation complexe.
+       Elle prend en compte les listes h_annees, h_nb_arbres et h_hauteur_moyenne qui sont créées dans la fonction annees_passees_C.
+       Elle affiche donc un graphe avec les données de ces listes."""
+
+    plt.ylim(0, 75)
+    plt.xlabel("Hauteur des arbres")
+    plt.ylabel("Nombre d'arbres")
+    plt.plot(h_annees, h_hauteur_moyenne, label="Hauteur moyenne")
+    plt.plot(h_annees, h_nb_arbres, label="Nombre d'arbres")
+    plt.xlabel("Années passées")
+    plt.legend()
+    plt.show()
+
+###########################################################Evènements####################################################################
+
+def attaque_animaux(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    """Cette fonction simule une attaque d'animaux dans la forêt.
+    Selon le continent choisi, un type d'animal différent attaque la forêt.
+    Les animaux ont une probabilité de détruire un arbre en fonction de sa hauteur"""
+
+    options_animal = {"1": "gnous" , "2": "gayals", "3": "grizzlys", "4": "tapirs", "5": "sangliers", "6": "kangourous"}
+    animal = options_animal[simulateur_choisi]
+    compte = 0
+    for i in range(len(tableau_foret)):
+        if tableau_foret[i] == caractere and hauteur[i] <= 5:
+            if choix_proba (6/10) : # 60% de chance de détruire un arbre de hauteur <= 5
+                tableau_foret[i] = " "
+                hauteur[i] = -1
+                compte += 1
+        if tableau_foret[i] == caractere and hauteur[i] > 5 and hauteur[i] <= 10:
+            if choix_proba (2/10) : # 20% de chance de détruire un arbre de hauteur entre 6 et 10
+                tableau_foret[i] = " "
+                hauteur[i] = -1
+                compte += 1
+    
+    if compte > 0 :
+        if compte == 1 :
+            renvoi.append(f"Il y a eu une attaque de {animal}, 1 arbre a été détruit")
+        else :
+            renvoi.append(f"Il y a eu une attaque de {animal}, {compte} arbres ont été détruits")
+
+    return tableau_foret,hauteur,renvoi
+    
+def incendie(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    """Cette fonction simule un incendie dans la forêt.
+    Un incendie démarre à un arbre aléatoire dans le tiers gauche de la forêt.
+    Le feu se propage ensuite vers la droite avec une probabilité qui dépend de l'âge de l'arbre et de la présence d'arbres en feu à proximité.
+    Les arbres touchés par le feu ont ensuite une chance de 25% d'être complètement détruits, sinon ils perdent 2/3 de leur hauteur."""
+
+    nb_arbres_vivants = tableau_foret.count(caractere)
+    depart_du_feu = random.randint(0,nb_arbres_vivants//3)
+    indices_brules = [] # On crée une liste temporaire pour la propagation du feu
+    rescapes = 0
+
+    for i in range(depart_du_feu,len(hauteur)):
+
+        if i == depart_du_feu :
+            indices_brules.append(i)
+
+        elif hauteur[i] > 0:
+
+            if rescapes >= 6 :
+                break
+
+            inflammation = 0.1
+            
+            if age[i] > 15:
+                inflammation += 0.1
+            
+            if (i-1) in indices_brules: # PROPAGATION : On vérifie si le voisin de gauche brûle
+                inflammation += 0.4 # Forte chance de propagation si le voisin de gauche brûle
+            
+            if choix_proba(inflammation):
+                indices_brules.append(i)
+                rescapes = 0
+            else:
+                rescapes += 1
+        else :
+            rescapes += 1
+                
+    # Une fois la boucle finie, on applique les dégâts
+    touches = 0
+    for i in indices_brules:
+        if choix_proba(0.25) : # 25% de chance que l'arbre soit complètement détruit
+            hauteur[i] = -1
+            tableau_foret[i] = " "
+        else:
+            hauteur[i] //= 3/2 # L'arbre perd 2/3 de sa hauteur
+        touches += 1
+                
+    if touches > 0 :
+        if touches == 1 :
+            renvoi.append("Il y a eu un incendie, 1 arbre a été touché")
+        else :
+            renvoi.append(f"Il y a eu un incendie, {touches} arbres ont été touchés")
+
+    return tableau_foret,hauteur,renvoi
+
+def graines(tableau_foret,hauteur,caractere,renvoi):
+
+    """Cette fonction plante des graines dans la forêt.
+    Chaque emplacement vide (" ") a une probabilité de 10% à 32% de recevoir une graine, en fonction de la présence d'arbres à proximité.
+    Si une graine est plantée, elle est représentée par le caractère "." et sa hauteur initiale est de 0.
+    Elle pourra ensuite pousser si il y a une période de pluie dans les années suivantes."""
+
+    proba_graine = 0
+    nb_graines = 0
+    for i in range(len(tableau_foret)):
+        if tableau_foret[i] == " ":
+            proba_graine = 0.1 # Probabilité de base d'avoir une graine
+            if i+1<=len(tableau_foret)-1:
+                if tableau_foret[i-1] == caractere or tableau_foret[i+1] == caractere:
+                    proba_graine += 0.15 # Augmentation de la probabilité s'il y a un arbre adjacent
+            if i+2<=len(tableau_foret)-1:
+                if tableau_foret[i-2] == caractere or tableau_foret[i+2] == caractere:
+                    proba_graine += 0.7 # Augmentation de la probabilité s'il y a un arbre à une distance de 2
+            if choix_proba(proba_graine):
+                tableau_foret[i] = "." # On plante une graine
+                hauteur[i] = 0
+                nb_graines += 1
+    if nb_graines > 0 :
+        if nb_graines == 1 :
+            renvoi.append("1 graine a été plantée")
+        else:
+            renvoi.append(f"{nb_graines} graines on été plantées ")
+
+    return tableau_foret,hauteur,renvoi
+    
+def eau(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    """Cette fonction fait pousser les arbres er les graines grâce à une période de pluie.
+    Chaque arbre pousse de 1 unité de hauteur s'il est déjà planté (et qu'il n'a pas atteint la hauteur maximale de 25).
+    Chaque graine a 60% de chances de pousser et de devenir un arbre de hauteur 1."""
+
+    pousse = 0
+    for i in range(len(tableau_foret)):
+        if tableau_foret[i] == caractere and hauteur[i]<25:
+            hauteur[i] += 1 # L'arbre pousse de 1 unité
+        elif tableau_foret[i] == ".":
+                if choix_proba(0.6):
+                    tableau_foret[i] = caractere # La graine devient un arbre
+                    hauteur[i] += 1 # La graine pousse
+                    pousse += 1
+    if pousse > 0 :
+        if pousse == 1 :
+            renvoi.append("Il y a eu une période de pluie : 1 graine a poussé.")
+        else :
+            renvoi.append(f"Il y a eu une période de pluie : {pousse} graines ont poussé.")
+    else :
+        renvoi.append(f"Il y a eu une période de pluie")
+
+    return tableau_foret, hauteur, renvoi
+
+def tempete_insecte(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    """Cette fonction a pour but de simuler une tempête d'insecte sur le continent océanient.
+       Elle regarde l'âge des arbres et leur hauteur pour savoir si ils peuvent être attaqués ou leur vulnérabilité à l'attaque."""
+
+    attaques=0
+    for i in range (len(tableau_foret)):
+        proba_mort = 0.07
+        if age[i] < 8:
+            proba_mort += 0.05
+        if choix_proba(proba_mort) and hauteur[i] > 4:
+            hauteur[i] = 2  
+            attaques += 1
+    renvoi.append(f"Il y a eu {attaques} attaques d'insectes")
+
+    return tableau_foret,hauteur,renvoi
+
+def uranium_fever(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    """Cette fonction a pour but de simuler un accident nucléaire sur le continent asiatique.
+       Elle regarde pour tous les arbres leur âge et leur taille pour savoir si elle doit leur rajouter ou enlever des unitées de taille."""
+
+    radioactif = 0
+    for i in range (len(tableau_foret)):
+        proba = 0.18
+        if age[i] <= 5 :
+            proba += 0.2
+        if choix_proba(proba) and hauteur[i] < 20:
+            hauteur[i] += 5
+            radioactif += 1
+        elif choix_proba(proba) and hauteur[i]>15:
+            hauteur[i] -= 4
+            radioactif += 1
+
+    renvoi.append(f"{radioactif} arbres ont reçu de l'énergie nucléaire")
+
+    return tableau_foret,hauteur,renvoi
+
+def tempete_froid(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    """Cette fonction a pour but de simuler une tempête de neige sur le continent nord américain.
+       Elle regarde la hauteur les arbres de toute la forêt pour savoir combien d'unitées de taille elle doit retirer à chaque arbre."""
+
+    for i in range(len(tableau_foret)):
+        if hauteur[i] > 25:
+            hauteur[i] -= 5
+        elif hauteur[i] > 0:
+            hauteur[i] -= 1
+
+    renvoi.append(f"il y a eu une tempête de neige") 
+
+    return tableau_foret, hauteur, renvoi
+
+def myriade(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    """Cette fonction a pour but de simuler une myriade sur le continent afrique.
+       Elle regarde la hauteur des arbres pour savoir combien d'unitées de taille elle doit ajouter à chaque arbre."""
+
+    proba = 0.2
+    nb = 0
+    for i in range(len(tableau_foret)):
+        if choix_proba(proba):
+            if -1 < hauteur[i] < 15:
+                hauteur[i] *= 2
+            elif hauteur[i] == -1:
+                hauteur[i] += 6
+            nb += 1
+
+    renvoi.append(f"il y a eu {nb} de méga-pousses")
+
+    return tableau_foret, hauteur, renvoi
+        
+def fortes_pluies(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    """Cette fonction a pour but de simuler de fortes pluies sur le continent sud américain.
+       Elle regarde la taille de cahque arbre. Si la taille est dans l'intervalle [0; 25], l'arbre grandit"""
+ 
+    proba = 0.2
+    nb=0
+    for i in range(len(tableau_foret)):
+        if choix_proba(proba):
+            if hauteur[i] != -1 and hauteur[i] < 25:
+                hauteur[i] += 1
+            nb+=1
+    renvoi.append(f"il y a eu de fortes pluies, {nb} ont grandis")
+
+    return tableau_foret, hauteur, renvoi
+
+def applanissement(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    """Cette fonction a pour but de simuler un applanissement de la forêtsur le continent europeen.
+        Elle regarde la hauteur des arbres par rapport à la variable f pour savoir si elle doit applanir la forêt."""
+
+    nb = 0
+    f = random.randint(10,20)
+    for i in range(len(tableau_foret)):
+        if hauteur[i] > f:
+            hauteur[i] = f
+            nb += 1
+    renvoi.append(f"il y a eu {nb} applanissements")
+
+    return tableau_foret, hauteur, renvoi
+
+def tsunami(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    """Cette fonction a pour but de simuler un tsunami sur le continent asiatique.
+       Elle donne une force à la variable hauteur_vague qui est utilisé pour savoir si l'arbre est submergé ou non.
+       La vague perd également de la force en fonction de la distance parcourue"""
+
+    hauteur_vague = random.randint(10,18)
+    nb_touches = 0
+    for i in range(len(hauteur)):
+        if hauteur[i] > 1:
+            if hauteur[i] < hauteur_vague:
+                tableau_foret[i] = " "
+                hauteur[i] = -1
+            else:
+                hauteur[i] -= int(hauteur_vague // 3)
+            nb_touches += 1
+        hauteur_vague = max(0, hauteur_vague - 1)
+        
+    renvoi.append(f"Un tsunami a balayé la côte, impactant {nb_touches} arbres.")
+    return tableau_foret, hauteur, renvoi
+
+
+def soleil(tableau_foret, hauteur, simulateur_choisi):
+
+    """Cette fonction fait grandir les arbres différemment selon qu'ils soient au soleil ou à l'ombre :
+    un arbre au soleil a plus de chances de grandir qu'un arbre à l'ombre
+    On considère que la ligne d'arbres est orientée du sud vers le nord, avec le soleil éclairant par le sud"""
+
+    options_ombre = {"1": 0.5 , "2": 1.1, "3": 1.5, "4": 0.8, "5": 1.8, "6": 0.6} # Le taux d'ombre est différent selon les continents
+    ombre = options_ombre[simulateur_choisi]
+    liste_probas = [] # Cette liste sera réutilisée dans la croissance annuelle des arbres
+
+    for i in range(len(tableau_foret)):
+        proba_croissance = 0.7 # Probabilité de croissance d'un arbre au soleil
+        
+        if i > 0:
+            if hauteur[i-1] > hauteur[i]: # Si l'arbre à son voisin de gauche plus grand que lui, il aura une probabilité plus faible de pousser
+                proba_croissance -= 0.2*ombre 
+            if i > 1:
+                if hauteur[i-2] > hauteur[i]: # On regarde le voisin à une distance de 2
+                    proba_croissance -= 0.1*ombre
+            if i > 2:
+                if hauteur[i-3] > hauteur[i]:
+                    proba_croissance -= 0.05*ombre # On regarde le voisin à une distance de 3
+            if i > 3:
+                if hauteur[i-4] > hauteur[i]:
+                    proba_croissance -= 0.025*ombre # On regarde le voisin à une distance de 4
+        liste_probas.append(proba_croissance) 
+
+    return liste_probas
+
+def proba_action(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi):
+
+    # On récupère la config du continent
+    config = stats_continents.get(simulateur_choisi)
+    
+    # Si le choix est invalide, on prend l'Europe par défaut (clé "5")
+    if not config:
+        config = stats_continents["5"]
+
+    fonctions = config["fonctions"]
+    probas = config["probabilites"]
+
+    # On parcourt les fonctions et leurs probabilités associées
+    for func, proba in zip(fonctions, probas):
+        if choix_proba(proba):
+            tableau_foret, hauteur, renvoi = func(tableau_foret, hauteur, caractere, renvoi, age, simulateur_choisi) # Tous les évènements (à part graine et soleil) ont les mêmes arguments (même s'ils ne les utilisent pas tous)
+
+    # La fonction graines est la même pour tous les continents
+    if choix_proba(0.25):
+        tableau_foret, hauteur, renvoi = graines(tableau_foret, hauteur, caractere, renvoi)
+    # 
+    liste_probas = soleil(tableau_foret, hauteur, simulateur_choisi)
+    tableau_foret, hauteur = croissance_arbres(tableau_foret, hauteur, liste_probas)
+
+    return tableau_foret, hauteur, renvoi
+
+###################################################Evènements selon les continents##################################################################
+
+stats_continents = {
+    "1": { #Afrique
+        "fonctions": [attaque_animaux, eau, incendie, myriade], # Liste de fonctions à exécuter
+        "probabilites": [0.2, 0.12, 0.17, 0.2] # Probabilité pour chaque fonction
+    },
+    "2": { #Asie
+        "fonctions": [attaque_animaux, eau, incendie, tsunami, uranium_fever],
+        "probabilites": [0.2, 0.4, 0.07, 0.1, 0.05]
+    },
+    "3": { #Amérique du Nord
+        "fonctions": [attaque_animaux, eau, incendie, tempete_froid],
+        "probabilites": [0.1, 0.3, 0.1, 0.06]
+    },
+    "4": { #Amérique du Sud
+        "fonctions": [attaque_animaux, eau, incendie, fortes_pluies], 
+        "probabilites": [0.2, 0.15, 0.13, 0.2]             
+    },
+    "5": { #Europe
+        "fonctions": [attaque_animaux, eau, incendie, applanissement],
+        "probabilites": [0.2, 0.3, 0.07, 0.15]
+    },
+    "6": { #Océanie
+        "fonctions": [attaque_animaux, eau, incendie, tempete_insecte],
+        "probabilites": [0.15, 0.2, 0.1, 0.1]
+    }
+}
+
+###########################################################Lancer la simulation####################################################################
+
+def lancer_la_simulation_B():
+
+    """Cette fontion a pour but de lancer la simulation basique.
+       Cette dernière appel les fonctions néssaires pour lancer la simulation de la manière la plus simple possible.
+       Elle est donc composée d'un arangement de fonctions avec chacunes leurs spécificitées et leur rôle bien préci dans le code."""
+
+    caractere = choix_caractere()
+    tableau_foret = nombre_arbres()
+    hauteur = hauteur_arbre(tableau_foret)
+    for i in range(len(tableau_foret)):
+        if hauteur[i] == 0:
+            tableau_foret[i] = "."
+        else:
+            tableau_foret[i] = caractere
+    afficher_foret(tableau_foret,hauteur,caractere)
+    print(hauteur)
+    nb_arbres_vivants = tableau_foret.count(caractere)
+    print(nb_arbres_vivants,"arbres")
+    annees_passees_B(tableau_foret, hauteur, caractere, renvoi)
+
+def lancer_la_simulation_C():
+
+    """Cette fontion a pour but de lancer la simulation complexe.
+       Elle appel toutes les fonctions nécessaires pour lancer la simulation de la manière complexe que nous avons crée.
+       Elle est donc composée d'un enssemble de fonctions qui forment donc un programme complexe en travaillant toutes ensemble."""
+
+    simulateur_choisi = choix_simulateur()
+    caractere = choix_caractere()
+    tableau_foret = nombre_arbres()
+    hauteur = hauteur_arbre(tableau_foret)
+    tableau_foret,hauteur = densite_des_arbres(tableau_foret,hauteur,caractere)
+    afficher_foret(tableau_foret,hauteur,caractere)
+    print(hauteur)
+    nb_arbres_vivants = tableau_foret.count(caractere)
+    print(nb_arbres_vivants,"arbres")
+    age = []
+    annees_passees_C(tableau_foret, hauteur, caractere, renvoi, simulateur_choisi, age)
+
+def simulation_BvsC():
+
+    """Cette fontion a pour but de pouvoir lancer les deux type de simulation.
+       Elle prend en compte le choix de l'utilisateur à travers la fonction choix_simulation().
+       Si l'input de l'utilisateur n'est pas valide, elle affiche un message d'erreur."""
+
+    choix = choix_simulation()
+
+    if choix == "B":
+        print("Simulation basique")
+        lancer_la_simulation_B()
+    elif choix == "C":
+        print("Simulation complexe")
+        lancer_la_simulation_C()
+    else:
+        print("Choix invalide")
+
+simulation_BvsC()
